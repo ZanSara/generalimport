@@ -17,6 +17,8 @@ NON_CALLABLE_DUNDERS = (
     "__annotations__", "__closure__", "__code__", "__defaults__", "__globals__", "__kwdefaults__",
     # Info
     "__bases__", "__class__", "__dict__", "__doc__", "__module__", "__name__", "__qualname__", "__all__", "__slots__",
+    # Pydantic
+    "_nparams",
 )
 
 CALLABLE_DUNDERS = [
@@ -25,7 +27,7 @@ CALLABLE_DUNDERS = [
     # Callable
     "__call__", 
     # Cast
-    "__bool__", "__bytes__", "__complex__", "__float__", "__int__", "__iter__", "__hash__", 
+    "__bool__", "__bytes__", "__complex__", "__float__", "__int__", "__iter__"#, "__hash__", 
     # Compare
     "__eq__", "__ge__", "__gt__", "__instancecheck__", "__le__", "__lt__", "__ne__", "__subclasscheck__", 
     # Context
@@ -49,12 +51,14 @@ CALLABLE_DUNDERS = [
     "__imatmul__", "__matmul__", "__rmatmul__", 
     # Object
     "__init_subclass__", "__prepare__", "__set_name__", 
-    # Pickel 
+    # Pickle 
     "__getnewargs__", "__getnewargs_ex__", "__getstate__", "__reduce__", "__reduce_ex__", 
     # String
     "__format__", "__fspath__", "__repr__", "__str__", 
     # Thread
-    "__aenter__", "__aexit__", "__aiter__", "__anext__", "__await__"
+    "__aenter__", "__aexit__", "__aiter__", "__anext__", "__await__",
+    # Typing
+    "__origin__", 
 ]
 
 
@@ -63,6 +67,7 @@ class FakeModule:
         Raises a ModuleNotFoundError when used in any way.
         Unhandled use-cases: https://github.com/ManderaGeneral/generalimport/issues?q=is%3Aissue+is%3Aopen+label%3Aunhandled """
     __path__ = []
+    __args__ = []
 
     def __init__(self, spec, trigger: Optional[str] = None):
         self.name = spec.name
@@ -93,6 +98,26 @@ class FakeModule:
         
         raise MissingOptionalDependency(
             f"Optional dependency {name} (required by '{trigger}') was used but it isn't installed."
+        )
+    
+    def __mro_entries__(self, *a, **k):
+        """
+        This prevents the creation of subclasses from triggering `generalimport`.
+
+        The classes so generated will trigger generalimport as soon as they're instantiated.
+        """
+        return (
+            type(
+                # Name of the fake class
+                "FakeBaseClass",
+                # Parent classes for this class
+                (object,),
+                # Methods
+                { 
+                    "__new__": partialmethod(FakeModule.error_func, "__new__"),
+                    "__init__": partialmethod(FakeModule.error_func, "__init__"),
+                }
+            ), 
         )
 
 #
