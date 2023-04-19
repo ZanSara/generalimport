@@ -2,7 +2,7 @@ from typing import Optional
 import sys
 import logging
 from functools import partialmethod
-from generalimport import MissingOptionalDependency, missing_exception
+from generalimport.exception import MissingOptionalDependency, missing_exception
 
 
 EXCEPTION_NAMING_PATTERNS = ["Exception", "Error"]
