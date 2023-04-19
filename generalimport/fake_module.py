@@ -66,6 +66,7 @@ class FakeModule:
         Raises a ModuleNotFoundError when used in any way.
         Unhandled use-cases: https://github.com/ManderaGeneral/generalimport/issues?q=is%3Aissue+is%3Aopen+label%3Aunhandled """
     __path__ = []
+    __args__ = []
 
     def __init__(self, spec, trigger: Optional[str] = None):
         self.name = spec.name
@@ -83,6 +84,7 @@ class FakeModule:
         """
         name = f"'{self.name}'" if hasattr(self, "name") else ""  # For __class_getitem__
         trigger = f"'{self.trigger}'" if hasattr(self, "trigger") else ""  # For __class_getitem__
+        logger.debug("generalimport was triggered on module '%s' by '%s' on '%s'.", name, trigger, __caller)
         raise MissingOptionalDependency(
             f"Optional dependency {name} (required by '{trigger}') was used but it isn't installed."
         )
@@ -93,7 +95,7 @@ class FakeModule:
             return missing_exception(dependency=self.name, trigger=item)
         
         if item in NON_CALLABLE_DUNDERS:
-            self.error_func()
+            self.error_func(item)
         
         return FakeModule(spec=self.__spec__, trigger=item)
 
