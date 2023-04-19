@@ -193,7 +193,7 @@ class Test(ImportTestCase):
             
         self.assertEqual(
             cm.output, 
-            ["DEBUG:generalimport:generalimport was triggered on module ''nonexisting'' by '__call__'."]
+            ["DEBUG:generalimport:generalimport was triggered on module ''nonexisting'' by ''func'' on '__call__'."]
         )
 
 
