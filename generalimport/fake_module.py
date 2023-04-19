@@ -1,6 +1,10 @@
+from typing import Optional
 import sys
 from functools import partialmethod
-from generalimport import MissingOptionalDependency
+from generalimport import MissingOptionalDependency, missing_exception
+
+
+EXCEPTION_NAMING_PATTERNS = ["Exception", "Error"]
 
 
 class FakeModule:
@@ -9,8 +13,9 @@ class FakeModule:
         Unhandled use-cases: https://github.com/ManderaGeneral/generalimport/issues?q=is%3Aissue+is%3Aopen+label%3Aunhandled """
     __path__ = []
 
-    def __init__(self, spec):
+    def __init__(self, spec, trigger: Optional[str] = None):
         self.name = spec.name
+        self.trigger = trigger or spec.name
 
         self.__name__ = spec.name
         self.__loader__ = spec.loader
@@ -19,12 +24,20 @@ class FakeModule:
 
     def error_func(self, *args, **kwargs):
         name = f"'{self.name}'" if hasattr(self, "name") else ""  # For __class_getitem__
-        raise MissingOptionalDependency(f"Optional dependency {name} was used but it isn't installed.")
+        trigger = f"'{self.trigger}'" if hasattr(self, "trigger") else ""  # For __class_getitem__
+        raise MissingOptionalDependency(
+            f"Optional dependency {name} (required by '{trigger}') was used but it isn't installed."
+        )
 
     def __getattr__(self, item):
+
+        if any(str(item).endswith(pattern) for pattern in EXCEPTION_NAMING_PATTERNS):
+            return missing_exception(dependency=self.name, trigger=item)
+        
         if item in self.non_called_dunders:
             self.error_func()
-        return self
+        
+        return FakeModule(spec=self.__spec__, trigger=item)
 
     def __mro_entries__(self, *a, **k):
         """
