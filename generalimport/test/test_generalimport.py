@@ -196,26 +196,25 @@ class Test(ImportTestCase):
             ["DEBUG:generalimport:generalimport was triggered on module ''nonexisting'' by ''func'' on '__call__'."]
         )
 
+    def test_custom_error_message(self):
+        generalimport(
+            ("hi", "Get 'hi' with 'pip install python-hi'."),
+            "hello"
+        )
+        import hi
 
+        with self.assertRaises(MissingOptionalDependency) as missing_dep_error:
+            hi.greet()
+        self.assertEqual(
+            "Optional dependency 'hi' (required by ''greet'') was used but it isn't installed. Get 'hi' with 'pip install python-hi'.",
+            str(missing_dep_error.exception)
+        )
 
+        import hello
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        with self.assertRaises(MissingOptionalDependency) as missing_dep_error:
+            hello.greet()
+        self.assertEqual(
+            "Optional dependency 'hello' (required by ''greet'') was used but it isn't installed.",
+            str(missing_dep_error.exception)
+        )
